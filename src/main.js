@@ -16,15 +16,19 @@ var tmp = new Vector2();
 var tmp2 = new Vector2();
 var raf = require('raf.js');
 
+var width,
+	height;
+
+
+
 $(function() {
 	var canvas = $("<canvas>").appendTo(document.body)[0];
 
-	var width = 900,
-		height = 535;
-	
-	canvas.width = width;
-	canvas.height = height;
+	width = window.innerWidth,
+	height = window.innerHeight;
 
+    canvas.width = width;
+	canvas.height = height;
 
 	var context = canvas.getContext("2d");
 	var noiseSize = 256;
@@ -34,11 +38,21 @@ $(function() {
 	noise.smoothing = true;
 	noise.generate();
 
+	$(window).bind('orientationchange', rotate);
+
+	function rotate(){
+		width = window.innerWidth;
+		height = window.innerHeight;
+		canvas.width = width;
+		canvas.height = height;
+		setupParticles();
+		animateIn();
+	}
+
 
 	var image = new Image();
 	image.onload = handleImageLoad;
-	image.src = "img/skyline2.png";
-
+	image.src = "img/bg.png";
 
 	var imagePixels;
 
@@ -48,10 +62,10 @@ $(function() {
 		painting: true,
 
 		//stroke options
-		count: 500,
+		count: 1500,
 		length: 33,
-		thickness: 12.0,
-		speed: 1.0,
+		thickness: 16.0,
+		speed: 50.0,
 		life: 1.0, 
 		alpha: 0.25,
 		round: true,
@@ -71,20 +85,14 @@ $(function() {
 		viewOriginal: false,
 	};
 
-	var noiseOverlay = $('<div>').appendTo(document.body).addClass('noise overlay').css({
-		width: width,
-		height: height,
-		opacity: options.grain*0.2
-	});
 	$(document.body).css('background', options.background);
 
 	$(image).appendTo(document.body).css({
-		visibility: 'hidden'
+		visibility: 'hidden',
+		display: 'none'
 	}).addClass('overlay original');
-
 	
 	var gui;
-	setupGUI();
 
 
 	var particles = [],
@@ -173,57 +181,6 @@ $(function() {
 
 	function updateGrain() {
 		noiseOverlay.css('opacity', options.grain*0.2);
-	}
-
-	function setupGUI() {
-		gui = new dat.GUI();
-
-		var motion = gui.addFolder('noise');	
-		motion.add(options, 'shift');
-		var noiseScale = motion.add(options, 'scale', 0.1, 5);
-
-		noiseScale.onFinishChange(function(value) {
-			noise.scale = options.scale;
-			noise.generate();
-		});
-
-		var stroke = gui.addFolder('stroke');
-		stroke.add(options, 'count', 1, 1500).onFinishChange(function(value) {
-			count = ~~value;
-			setupParticles();
-		});
-
-		stroke.add(options, 'length', 0.1, 200.0);
-		stroke.add(options, 'thickness', 0.1, 30.0);
-		stroke.add(options, 'life', 0.0, 1.0);
-		stroke.add(options, 'speed', 0.0, 1.0);
-		stroke.add(options, 'alpha', 0.0, 1.0);
-		stroke.add(options, 'angle', 0.0, 2.0);
-		stroke.add(options, 'round');
-		stroke.add(options, 'motion');
-		stroke.open();
-
-		var color = gui.addFolder('color');
-		color.add(options, 'useOriginal');
-		color.add(options, 'hue', 0, 360);
-		color.add(options, 'saturation', 0, 1.0);
-		color.add(options, 'lightness', 0, 1.0);
-		color.add(options, 'grain', 0, 1.0).onFinishChange(updateGrain.bind(this));
-		color.open();
-
-		var canvas = gui.addFolder('canvas');
-
-		canvas.add(options, 'painting');
-		canvas.addColor(options, 'background');
-		canvas.add(options, 'viewOriginal').onFinishChange(function(value) {
-			$(image).css('visibility', value ? 'visible' : 'hidden');
-		});
-		canvas.add(options, 'animate');
-		canvas.add(options, 'clear');
-		canvas.open();
-
-
-
 	}
 
 	function clearRect() {
