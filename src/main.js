@@ -91,7 +91,7 @@ $(function() {
 	
 
 	var particles = [],
-		count = 1500,
+		count = 1500;
 
 	if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
 		count = 250;
