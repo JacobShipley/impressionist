@@ -19,8 +19,6 @@ var raf = require('raf.js');
 var width,
 	height;
 
-
-
 $(function() {
 	var canvas = $("<canvas>").appendTo(document.body)[0];
 
@@ -34,7 +32,6 @@ $(function() {
 	var noiseSize = 256;
 	var noise = new NoiseMap(noiseSize);
 	noise.scale = 3.2;
-	// noise.seamless = true;
 	noise.smoothing = true;
 	noise.generate();
 
@@ -62,9 +59,9 @@ $(function() {
 		painting: true,
 
 		//stroke options
-		count: 1500,
+		count: 100,
 		length: 33,
-		thickness: 16.0,
+		thickness: 30.0,
 		speed: 50.0,
 		life: 1.0, 
 		alpha: 0.25,
@@ -79,7 +76,7 @@ $(function() {
 		lightness: 1.0,
 		grain: .7,
 
-		background: '#2f2f2f',
+		background: '#e5e5e5',
 		clear: clear,
 		animate: animateIn,
 		viewOriginal: false,
@@ -92,49 +89,25 @@ $(function() {
 		display: 'none'
 	}).addClass('overlay original');
 	
-	var gui;
-
 
 	var particles = [],
-		count = 500,
-		step = 0,
-		time = 0;
-	setupParticles();
+		count = 1500,
 
+	if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+		count = 250;
+	}
+
+	setupParticles();
 	animateIn();
 
 	function handleImageLoad() {
 		imagePixels = imagedata.getImageData(image).data;
-				
-		// context.fillStyle = '#ebebeb';
 		clearRect();
-
-		// context.globalAlpha = 1;
-		// context.drawImage(image, 0, 0);
-
 		requestAnimationFrame(render);
 	}
 
-	function updateAnimation() {
-
-		//wtf dat.gui...
-		for (var k in gui.__folders.stroke.__controllers) {
-			gui.__folders.stroke.__controllers[k].updateDisplay();
-		}
-		for (var k in gui.__folders.color.__controllers) {
-			gui.__folders.color.__controllers[k].updateDisplay();
-		}
-	}
-
-
 	function animateIn() {
 		TweenLite.killTweensOf(options);
-		updateAnimation();
-
-		// TweenLite.to(options, 1.0, {
-		// 	grain: 1.0,
-		// 	onUpdate: updateGrain.bind(this),
-		// });
 
 		TweenLite.fromTo(options, 1.0, {
 			thickness: 30,
@@ -156,7 +129,6 @@ $(function() {
 			speed: 0.6,
 			delay: 1.0,
 			// ease: Expo.easeOut,
-			onUpdate: updateAnimation.bind(this)
 		});
 		TweenLite.to(options, 3.0, {
 			thickness: 7.0,
@@ -195,46 +167,10 @@ $(function() {
 		setupParticles();
 	}
 
-
-
 	function render() {
 		requestAnimationFrame(render);
-		time+=0.1;
-		step++;
 
-
-		if (!options.painting )
-			return;
-
-		if (options.shift && step % 20 === 0) {
-			noise.offset+=.01;
-			noise.generate();
-		}
-
-		// context.globalAlpha = 0.1;
-		// context.fillStyle = 'white';
-		// context.fillRect(0, 0, width, height);
-
-		// context.clearRect(0, 0, width, height);
 		var imageWidth = image.width;
-
-		// for (var y=0; y<height; y++) {
-		// 	for (var x=0; x<width; x++) {
-		// 		var sampleWidth = width,
-		// 			sampleHeight = width;
-
-		// 		var pxIndex = (x + (y * imageWidth))*4;
-		// 		var red = imagePixels[ pxIndex ],
-		// 			green = imagePixels[ pxIndex + 1],
-		// 			blue = imagePixels[pxIndex + 2];
-		// 		context.fillStyle = 'rgb('+red+', '+green+', '+blue+')';
-
-		// 		// var n = noise.sample(x*(noiseSize/sampleWidth), y*(noiseSize/sampleHeight));
-		// 		// context.fillStyle = 'hsl(0, 0%, '+((n/2+0.5)*100)+'%)';
-		// 		context.fillRect(x, y, 1, 1);
-		// 	}
-		// }
-		
 
 		for (var i=0; i<particles.length; i++) {
 			var p = particles[i];
@@ -242,7 +178,6 @@ $(function() {
 			if (p.motion)
 				p.position.add(p.velocity);
 
-			//add in our motion
 			var px = ~~p.position.x,
 				py = ~~p.position.y;
 
@@ -257,11 +192,7 @@ $(function() {
 			p.velocity.add(tmp);
 			p.velocity.normalize();
 
-			// if (p.position.x > width || p.position.x < 0 || p.position.y > height || p.position.y < 0 ) {
-			// 	p.reset();
-			// }
-
-			if (/*p.position.x < 0 || */p.position.x > width || p.position.y > height || p.position.y < 0) {
+			if (p.position.x > width || p.position.y > height || p.position.y < 0) {
 				p.reset();
 			}
 
@@ -273,25 +204,15 @@ $(function() {
 				green = imagePixels[ pxIndex + 1],
 				blue = imagePixels[pxIndex + 2];
 
-			// var alpha = Math.sin(time*0.1)*100+100;
 			var alpha = options.hue;
-
-			// CIE luminance for the RGB
-			var val = 0.2126 * (red/255) + 0.7152 * (green/255) + 0.0722 * (blue/255);
+			var brightness = 1.0;
 			
-
-			var brightness = val;
-			
-			// context.strokeStyle = 'hsl('+lerp(alpha, alpha-100, rot)+', '+(1-red/255)*lerp(0.7, 1, rot)*100+'%, '+lerp(0.45, 0.55, rot)*100+'%)';
 			if (options.useOriginal)
 				context.strokeStyle = 'rgb('+~~(red*brightness)+', '+~~(green*brightness)+', '+~~(blue*brightness)+')';
 			else
 				context.strokeStyle = 'hsl('+lerp(alpha, alpha-100, rot)+', '+(1-val)*lerp(0.2, 0.9, rot)*options.saturation*100+'%, '+(val)*lerp(0.45, 1, rot)*options.lightness*100+'%)';
 
 			var s = 2;
-
-			// context.fillStyle = 'black';
-			// context.fillRect(p.position.x, p.position.y, 1, 1);
 
 		 	context.beginPath();
 			context.moveTo(p.position.x, p.position.y);
@@ -305,12 +226,10 @@ $(function() {
 			context.lineWidth = options.thickness*(n/2+0.5);
 			context.lineCap = options.round ? 'round' : 'square';
 
-			p.size += 0.1 * options.speed * p.speed;
+			p.size += 1 * options.speed * p.speed;
 			if (p.size >= options.life) {
 				p.reset(width, height).random();	
 			}
-			
 		}
-
 	}
 });
